@@ -16,7 +16,6 @@ class DataLoader {
 
         def lineNumber = 1
         is.splitEachLine(','){ csvLine ->
-            println('PROCESSING ' + lineNumber)
             if (lineNumber++ == 1)
                 return
 
@@ -27,7 +26,6 @@ class DataLoader {
                 String clicks = csvLine[3]
                 String impressions = csvLine[4]
                 if (campaignCache.get(datasource, campaign)){
-                    println("Using cached ${campaign}")
 
                     Campaign c = campaignCache.get(datasource, campaign)
                     new CampaignStatistic(campaign: c,
@@ -35,7 +33,6 @@ class DataLoader {
                             clicks: clicks as Integer,
                             impressions: impressions as Integer).save()
                 }else {
-                    println("Saving new ${campaign}")
                     Datasource ds = new Datasource(name: datasource).save()
                     Campaign c = new Campaign(datasource: ds, name: campaign).save()
                     campaignCache.put(c)

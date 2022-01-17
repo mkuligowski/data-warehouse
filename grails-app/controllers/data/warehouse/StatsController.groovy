@@ -8,6 +8,11 @@ class StatsController {
     def query(QueryCommand command) {
         def x = false
 
+        if (!command.validate()) {
+            response.status = 400
+            respond( [errors: command.errors.allErrors])
+        }
+
         List<String> dimensions = command.dimensions.collect{it.mappedColumn}
         List<String> metricsAggregates = command.metrics.collect{it.expression}
         List<String> metricNames = command.metrics.collect{it.mappedColumn}
