@@ -22,8 +22,6 @@ class StatsController {
         }
 
 
-
-        respond result
-
+        respond ([headers: dimensions + metricNames, rows: result]])
     }
 }
