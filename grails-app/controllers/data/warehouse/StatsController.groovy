@@ -11,7 +11,7 @@ class StatsController {
         List<String> dimensions = command.dimensions.collect{it.mappedColumn}
         List<String> metricsAggregates = command.metrics.collect{it.expression}
         List<String> metricNames = command.metrics.collect{it.mappedColumn}
-        String restriction = command.filters.collect {"${it.filter.mappedColumn}='${it.value}'"}.join(' AND ')
+        String restriction = command.filters.collect {"${it.filter.mappedColumn}=?"}.join(' AND ')
 
         def c = StatsView.createCriteria()
         def result = c.list {
@@ -20,7 +20,7 @@ class StatsController {
                         dimensions + metricNames,
                         dimensions.collect {s -> HibernateCriteriaBuilder.STRING} + metricNames.collect( i -> HibernateCriteriaBuilder.BIG_DECIMAL)
             }
-            sqlRestriction restriction
+            sqlRestriction restriction, command.filters.collect{it.value}
 //            x ? (eq 'country','US' ): (sqlRestriction "1=1")
 
         }
