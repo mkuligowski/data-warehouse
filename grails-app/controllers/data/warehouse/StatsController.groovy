@@ -26,7 +26,6 @@ class StatsController {
                         dimensions.collect {s -> HibernateCriteriaBuilder.STRING} + metricNames.collect( i -> HibernateCriteriaBuilder.BIG_DECIMAL)
             }
             sqlRestriction restriction, command.filters.collect{it.value}
-//            x ? (eq 'country','US' ): (sqlRestriction "1=1")
 
         }
 
