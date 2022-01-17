@@ -1,6 +1,6 @@
 package data.warehouse
 
 class Filter {
-    Dimension group
+    Dimension filter
     String value
 }

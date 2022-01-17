@@ -1,5 +1,7 @@
 package data.warehouse
 
+import grails.orm.HibernateCriteriaBuilder
+
 class StatsController {
     static responseFormats = ['json']
 
@@ -9,19 +11,20 @@ class StatsController {
         List<String> dimensions = command.dimensions.collect{it.mappedColumn}
         List<String> metricsAggregates = command.metrics.collect{it.expression}
         List<String> metricNames = command.metrics.collect{it.mappedColumn}
-
+        String restriction = command.filters.collect {"${it.filter.mappedColumn}='${it.value}'"}.join(' AND ')
 
         def c = StatsView.createCriteria()
         def result = c.list {
             projections {
-                sqlGroupProjection "${dimensions.join(',')}, ${metricsAggregates.join(',')}", dimensions.join(','), dimensions + metricNames, dimensions.collect {s -> STRING} + metricNames.collect( i -> INTEGER)
+                sqlGroupProjection "${dimensions.join(',')}, ${metricsAggregates.join(',')}", dimensions.join(','),
+                        dimensions + metricNames,
+                        dimensions.collect {s -> HibernateCriteriaBuilder.STRING} + metricNames.collect( i -> HibernateCriteriaBuilder.BIG_DECIMAL)
             }
-//            sqlRestriction "country='US'"
+            sqlRestriction restriction
 //            x ? (eq 'country','US' ): (sqlRestriction "1=1")
 
         }
 
-
-        respond ([headers: dimensions + metricNames, rows: result]])
+        respond ([headers: dimensions + metricNames, rows: result])
     }
 }

@@ -1,11 +1,13 @@
 package data.warehouse
 
+import grails.validation.Validateable
+
 import java.time.LocalDate
 
-class QueryCommand {
+class QueryCommand implements Validateable {
     List<Metric> metrics
     List<Dimension> dimensions
-    List<Filter> filter
+    List<Filter> filters
     LocalDate dateFrom
     LocalDate dateTo
 }
