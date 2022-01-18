@@ -8,6 +8,7 @@ class BootStrap {
     DataLoader dataLoader
 
     def init = { servletContext ->
+        // TODO: transactional - all or nothing
         dataLoader.loadFile(new ClassPathResource('./data.csv').getFile().newInputStream())
     }
     def destroy = {
