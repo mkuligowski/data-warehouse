@@ -1,5 +1,6 @@
 package com.mkuligowski.datawarehouse.query
 
+import data.warehouse.Dimension
 import data.warehouse.Metric
 import data.warehouse.QueryCommand
 import data.warehouse.SQLRestriction
@@ -14,12 +15,11 @@ class StatsQueryService {
             (Metric.IMPRESSIONS): [mappedColumn: 'impressions', aggregationExpression: 'sum(impressions) as impressions'],
             (Metric.CTR): [mappedColumn: 'ctr', aggregationExpression: 'sum(clicks) * 1.0 / sum(impressions) as ctr'],
     ]
-//
-//    private static def DIMENSIONS_MAPPING = [
-//            Metric.CLICKS,
-//            Metric.IMPRESSIONS,
-//            Metric.CTR,
-//    ]
+
+    private static def DIMENSIONS_MAPPING = [
+            (Dimension.CAMPAIGN):[mappedColumn: 'campaign_name'],
+            (Dimension.DATASOURCE):[mappedColumn: 'datasource_name']
+    ]
 
     @Transactional(readOnly = true)
     def query(QueryCommand queryParams) {
@@ -27,12 +27,12 @@ class StatsQueryService {
         // TODO: validateMetrics
 
 
-        List<String> dimensions = queryParams.dimensions.collect{it.mappedColumn}
+        List<String> dimensions = queryParams.dimensions.collect{DIMENSIONS_MAPPING[it].mappedColumn}
         List<String> metricsAggregates = queryParams.metrics.collect{METRICS_MAPPING[it].aggregationExpression}
         List<String> metricNames = queryParams.metrics.collect{METRICS_MAPPING[it].mappedColumn}
 
         List<SQLRestriction> restrictions = queryParams.filters.collect {
-            new SQLRestriction(field: it.filter.mappedColumn, value: it.value, operator: '=')
+            new SQLRestriction(field:DIMENSIONS_MAPPING[it.filter].mappedColumn, value: it.value, operator: '=')
         }
         if (queryParams.dateFrom)
             restrictions << new SQLRestriction(field: 'stats_date', value: queryParams.dateFrom, operator: '>=')
