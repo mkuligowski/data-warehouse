@@ -64,34 +64,6 @@ databaseChangeLog = {
         }
     }
 
-    changeSet(author: "mkuligowski (generated)", id: "1642371805740-4") {
-        createTable(tableName: "SOME_TABLE") {
-            column(autoIncrement: "true", name: "ID", type: "BIGINT") {
-                constraints(nullable: "false", primaryKey: "true", primaryKeyName: "CONSTRAINT_1")
-            }
-
-            column(name: "VERSION", type: "BIGINT") {
-                constraints(nullable: "false")
-            }
-
-            column(name: "CLICKS", type: "INT") {
-                constraints(nullable: "false")
-            }
-
-            column(name: "CITY", type: "VARCHAR(255)") {
-                constraints(nullable: "false")
-            }
-
-            column(name: "IMPRESSIONS", type: "INT") {
-                constraints(nullable: "false")
-            }
-
-            column(name: "COUNTRY", type: "VARCHAR(255)") {
-                constraints(nullable: "false")
-            }
-        }
-    }
-
     changeSet(author: "mkuligowski (generated)", id: "1642371805740-5") {
         createIndex(indexName: "FK6046KVC58J9NBMKPH354AAJDX_INDEX_8", tableName: "CAMPAIGN_STATISTIC") {
             column(name: "CAMPAIGN_ID")
@@ -112,7 +84,20 @@ databaseChangeLog = {
         addForeignKeyConstraint(baseColumnNames: "DATASOURCE_ID", baseTableName: "CAMPAIGN", constraintName: "FKKFI4V8VE3PKDLLNYELS9X1F8R", deferrable: "false", initiallyDeferred: "false", onDelete: "RESTRICT", onUpdate: "RESTRICT", referencedColumnNames: "ID", referencedTableName: "DATASOURCE", validate: "true")
     }
 
-    changeSet(author: "mkuligowski (generated)", id: "1642371805740-9") {
+    changeSet(author: "mkuligowski", id: "1642371805740-9") {
         createView(viewName: "stats_v", selectQuery: "select cs.*, c.name campaign_name, d.name datasource_name from campaign_statistic cs join campaign c on c.id = cs.campaign_id join datasource d on d.id = c.datasource_id")
     }
+
+    changeSet(author: "mkuligowski", id: "1642371805740-10") {
+        createIndex(tableName: "campaign_statistic", name: 'campaign_idx'){
+            column(name: 'campaign_id')
+        }
+        createIndex(tableName: "campaign_statistic", name: 'stats_date_idx'){
+            column(name: 'stats_date')
+        }
+        createIndex(tableName: "campaign", name: 'datasource_idx'){
+            column(name: 'datasource_id')
+        }
+    }
+
 }
