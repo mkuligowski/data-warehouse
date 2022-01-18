@@ -14,7 +14,7 @@ class StatsQueryService {
     private static def METRICS_MAPPING = [
             (Metric.CLICKS): [mappedColumn: 'clicks', aggregationExpression: 'sum(clicks) as clicks'],
             (Metric.IMPRESSIONS): [mappedColumn: 'impressions', aggregationExpression: 'sum(impressions) as impressions'],
-            (Metric.CTR): [mappedColumn: 'ctr', aggregationExpression: 'sum(clicks) * 1.0 / sum(impressions) as ctr'],
+            (Metric.CTR): [mappedColumn: 'ctr', aggregationExpression: 'ROUND(sum(clicks) * 1.0 / sum(impressions),5) as ctr'],
     ]
 
     private static def DIMENSIONS_MAPPING = [
@@ -50,23 +50,23 @@ class StatsQueryService {
         return  ([headers: dimensions + metricNames, rows: result])
     }
 
-    private List<Type> prepareColumnTypes(List<String> dimensions, List<String> metricNames) {
-        dimensions.collect { s -> HibernateCriteriaBuilder.STRING } + metricNames.collect(i -> HibernateCriteriaBuilder.DOUBLE)
+    private static List<Type> prepareColumnTypes(List<String> dimensions, List<String> metricNames) {
+        dimensions.collect { s -> HibernateCriteriaBuilder.STRING } + metricNames.collect(i -> HibernateCriteriaBuilder.BIG_DECIMAL)
     }
 
-    private List<String> prepareColumnList(List<String> dimensions, List<String> metricNames) {
+    private static List<String> prepareColumnList(List<String> dimensions, List<String> metricNames) {
         dimensions + metricNames
     }
 
-    private String prepareGroupingSQLStatement(List<String> dimensions) {
+    private static String prepareGroupingSQLStatement(List<String> dimensions) {
         dimensions.join(',')
     }
 
-    private String prepareProjectionSQLStatement(List<String> dimensions, List<String> metricsAggregates) {
+    private static String prepareProjectionSQLStatement(List<String> dimensions, List<String> metricsAggregates) {
         return "${dimensions.join(',')} ${dimensions ? ',' : ''} ${metricsAggregates.join(',')}"
     }
 
-    private List prepareRestrictionsStatement(QueryCommand queryParams) {
+    private static List prepareRestrictionsStatement(QueryCommand queryParams) {
         List<SQLRestriction> restrictions = queryParams.filters.collect {
             new SQLRestriction(field: DIMENSIONS_MAPPING[it.filter].mappedColumn, value: it.value, operator: '=')
         }

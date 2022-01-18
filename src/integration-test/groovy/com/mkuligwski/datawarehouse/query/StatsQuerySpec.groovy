@@ -239,9 +239,9 @@ class StatsQuerySpec extends Specification {
         then:
         result.headers == ['datasource_name', 'campaign_name','ctr']
         result.rows.size() == 3
-        result.rows[0] == ['Google Ads', 'Google campaign', new BigDecimal(0.25)]
-        result.rows[1] == ['Twitter Ads', 'Other Twitter campaign', new BigDecimal(0.1)]
-        result.rows[2] == ['Twitter Ads', 'Twitter campaign', new BigDecimal(0.5)]
+        result.rows[0] == ['Google Ads', 'Google campaign', 0.25]
+        result.rows[1] == ['Twitter Ads', 'Other Twitter campaign',0.1]
+        result.rows[2] == ['Twitter Ads', 'Twitter campaign', 0.5]
     }
 
 
