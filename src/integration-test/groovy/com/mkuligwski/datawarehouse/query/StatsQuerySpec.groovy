@@ -5,6 +5,7 @@ import data.warehouse.Campaign
 import data.warehouse.CampaignStatistic
 import data.warehouse.Datasource
 import data.warehouse.Dimension
+import data.warehouse.Filter
 import data.warehouse.Metric
 import data.warehouse.QueryCommand
 import grails.gorm.transactions.Rollback
@@ -323,32 +324,55 @@ class StatsQuerySpec extends Specification {
             result.rows.size() == 1
             result.rows[0] == ['Google campaign', 20, 40]
     }
-//
-//    void "should filter with filters"() {
-//        when:
-//        QueryCommand query = new QueryCommand()
-//        query.metrics = [Metric.CLICKS]
-//        def result = statsQueryService.query(query)
-//        then:
-//        result.rows.size() == 2
-//    }
-//
-//    void "should combine filters"() {
-//        when:
-//        QueryCommand query = new QueryCommand()
-//        query.metrics = [Metric.CLICKS]
-//        def result = statsQueryService.query(query)
-//        then:
-//        result.rows.size() == 2
-//    }
-//
-//
-//    void "should not calculate withoun any metric filters"() {
-//        when:
-//        QueryCommand query = new QueryCommand()
-//        query.metrics = [Metric.CLICKS]
-//        def result = statsQueryService.query(query)
-//        then:
-//        result.rows.size() == 2
-//    }
+
+    void "should filter with filters"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 60, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 50, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
+            query.dimensions = [Dimension.CAMPAIGN]
+            query.filters = [new Filter(filter: Dimension.CAMPAIGN, value: 'Other Twitter campaign')]
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['campaign_name','clicks','impressions']
+            result.rows.size() == 1
+            result.rows[0] == ['Other Twitter campaign', 5, 50]
+    }
+
+    void "should combine filters"() {
+        given:
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 60, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 50, statsDate: LocalDate.of(2022, Month.JANUARY, 1)).save(flush: true)
+        new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 7, impressions: 57, statsDate: LocalDate.of(2022, Month.JANUARY, 2)).save(flush: true)
+        new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 3, impressions: 13, statsDate: LocalDate.of(2022, Month.JANUARY, 3)).save(flush: true)
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
+        query.dimensions = [Dimension.CAMPAIGN]
+        query.filters = [new Filter(filter: Dimension.CAMPAIGN, value: 'Other Twitter campaign')]
+        query.dateFrom = LocalDate.of(2022, Month.JANUARY, 2)
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['campaign_name','clicks','impressions']
+        result.rows.size() == 1
+        result.rows[0] == ['Other Twitter campaign', 10, 70]
+    }
+
+    void "should not calculate without any metric"() {
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = []
+        query.dimensions = [Dimension.CAMPAIGN]
+        query.dateFrom = LocalDate.of(2022, Month.APRIL, 30)
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['campaign_name']
+        result.rows.isEmpty()
+    }
 }
