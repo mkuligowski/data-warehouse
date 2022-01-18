@@ -7,6 +7,7 @@ import data.warehouse.SQLRestriction
 import data.warehouse.StatsView
 import grails.gorm.transactions.Transactional
 import grails.orm.HibernateCriteriaBuilder
+import org.hibernate.type.Type
 
 class StatsQueryService {
 
@@ -24,15 +25,50 @@ class StatsQueryService {
     @Transactional(readOnly = true)
     def query(QueryCommand queryParams) {
 
-        // TODO: validateMetrics
+        if (!queryParams.metrics)
+            return  ([headers: [], rows: []])
 
 
         List<String> dimensions = queryParams.dimensions.collect{DIMENSIONS_MAPPING[it].mappedColumn}
         List<String> metricsAggregates = queryParams.metrics.collect{METRICS_MAPPING[it].aggregationExpression}
         List<String> metricNames = queryParams.metrics.collect{METRICS_MAPPING[it].mappedColumn}
 
+        def (String restrictionSQLStatement, List<Object> restrictionBindings) = prepareRestrictionsStatement(queryParams)
+
+        def criteria = StatsView.createCriteria()
+        def result = criteria.list {
+            projections {
+                sqlGroupProjection prepareProjectionSQLStatement(dimensions, metricsAggregates),
+                        prepareGroupingSQLStatement(dimensions),
+                        prepareColumnList(dimensions, metricNames),
+                        prepareColumnTypes(dimensions, metricNames)
+            }
+            sqlRestriction restrictionSQLStatement, restrictionBindings
+
+        }
+
+        return  ([headers: dimensions + metricNames, rows: result])
+    }
+
+    private List<Type> prepareColumnTypes(List<String> dimensions, List<String> metricNames) {
+        dimensions.collect { s -> HibernateCriteriaBuilder.STRING } + metricNames.collect(i -> HibernateCriteriaBuilder.DOUBLE)
+    }
+
+    private List<String> prepareColumnList(List<String> dimensions, List<String> metricNames) {
+        dimensions + metricNames
+    }
+
+    private String prepareGroupingSQLStatement(List<String> dimensions) {
+        dimensions.join(',')
+    }
+
+    private String prepareProjectionSQLStatement(List<String> dimensions, List<String> metricsAggregates) {
+        return "${dimensions.join(',')} ${dimensions ? ',' : ''} ${metricsAggregates.join(',')}"
+    }
+
+    private List prepareRestrictionsStatement(QueryCommand queryParams) {
         List<SQLRestriction> restrictions = queryParams.filters.collect {
-            new SQLRestriction(field:DIMENSIONS_MAPPING[it.filter].mappedColumn, value: it.value, operator: '=')
+            new SQLRestriction(field: DIMENSIONS_MAPPING[it.filter].mappedColumn, value: it.value, operator: '=')
         }
         if (queryParams.dateFrom)
             restrictions << new SQLRestriction(field: 'stats_date', value: queryParams.dateFrom, operator: '>=')
@@ -40,19 +76,7 @@ class StatsQueryService {
         if (queryParams.dateTo)
             restrictions << new SQLRestriction(field: 'stats_date', value: queryParams.dateTo, operator: '<=')
 
-        String restriction = restrictions.collect {"${it.field}${it.operator}?"}.join(' AND ')
-
-        def c = StatsView.createCriteria()
-        def result = c.list {
-            projections {
-                sqlGroupProjection "${dimensions.join(',')} ${dimensions? ',':''} ${metricsAggregates.join(',')}", dimensions.join(','),
-                        dimensions + metricNames,
-                        dimensions.collect {s -> HibernateCriteriaBuilder.STRING} + metricNames.collect(i -> HibernateCriteriaBuilder.DOUBLE)
-            }
-            sqlRestriction restriction, restrictions.collect{it.value}
-
-        }
-
-        return  ([headers: dimensions + metricNames, rows: result])
+        String restrictionSqlStatement = restrictions.collect { "${it.field}${it.operator}?" }.join(' AND ')
+        return [restrictionSqlStatement, restrictions.collect{it.value}]
     }
 }

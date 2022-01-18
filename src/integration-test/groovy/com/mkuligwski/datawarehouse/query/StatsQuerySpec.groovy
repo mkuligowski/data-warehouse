@@ -372,7 +372,7 @@ class StatsQuerySpec extends Specification {
         query.dateFrom = LocalDate.of(2022, Month.APRIL, 30)
         def result = statsQueryService.query(query)
         then:
-        result.headers == ['campaign_name']
+        result.headers.isEmpty()
         result.rows.isEmpty()
     }
 }
