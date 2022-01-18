@@ -222,6 +222,27 @@ class StatsQuerySpec extends Specification {
     }
 
 
+
+    void "should calculate ctr with datasource and campaign dimensions"() {
+        given:
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 60, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 50, statsDate: LocalDate.now()).save(flush: true)
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = [Metric.CTR]
+        query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['datasource_name', 'campaign_name','ctr']
+        result.rows.size() == 3
+        result.rows[0] == ['Google Ads', 'Google campaign', new BigDecimal(0.25)]
+        result.rows[1] == ['Twitter Ads', 'Other Twitter campaign', new BigDecimal(0.1)]
+        result.rows[2] == ['Twitter Ads', 'Twitter campaign', new BigDecimal(0.5)]
+    }
+
+
 //    void "should aggregate all metrics by one dimensions"() {
 //        when:
 //        QueryCommand query = new QueryCommand()
