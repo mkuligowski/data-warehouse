@@ -1,11 +1,15 @@
 package com.mkuligwski.datawarehouse.query
 
+import com.mkuligowski.datawarehouse.query.StatsQueryService
 import data.warehouse.Campaign
 import data.warehouse.CampaignStatistic
 import data.warehouse.Datasource
-import data.warehouse.StatsView
+import data.warehouse.Dimension
+import data.warehouse.Metric
+import data.warehouse.QueryCommand
+import grails.gorm.transactions.Rollback
 import grails.testing.mixin.integration.Integration
-import grails.gorm.transactions.*
+import org.springframework.beans.factory.annotation.Autowired
 import spock.lang.Specification
 
 import java.time.LocalDate
@@ -14,23 +18,194 @@ import java.time.LocalDate
 @Rollback
 class StatsQuerySpec extends Specification {
 
+    @Autowired
+    StatsQueryService statsQueryService
+    Campaign someGoogleCampaign
+    Campaign someTwitterCampaign
+    Campaign someOtherTwitterCampaign
+
     def setup() {
         Datasource googleDs = new Datasource(name: 'Google Ads').save(flush: true)
         Datasource twitterDs = new Datasource(name: 'Twitter Ads').save(flush: true)
+        someGoogleCampaign = new Campaign(name: 'Google campaign', datasource: googleDs).save(flush: true)
+        someTwitterCampaign = new Campaign(name: 'Twitter campaign', datasource: twitterDs).save(flush: true)
+        someOtherTwitterCampaign = new Campaign(name: 'Other Twitter campaign', datasource: twitterDs).save(flush: true)
+    }
 
-        Campaign someGoogleCampaign = new Campaign(name: 'Google campaign', datasource: googleDs).save(flush: true)
-        Campaign someTwitterCampaign = new Campaign(name: 'Twitter campaign', datasource: twitterDs).save(flush: true)
-
+    void "should query without any dimension"() {
+        given:
         new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = [Metric.CLICKS]
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['clicks']
+        result.rows.size() == 1
+        result.rows[0] == 30 // TODO: check this out
     }
 
-    def cleanup() {
+    void "should query with one dimension"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS]
+            query.dimensions = [Dimension.DATASOURCE]
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['datasource_name', 'clicks']
+            result.rows.size() == 2
+            result.rows[0] == ['Google Ads',20]
+            result.rows[1] == ['Twitter Ads',10]
     }
 
-    void "test something"() {
-        expect:
-        StatsView.findAll().size() == 3
+    void "should query with many dimensions"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS]
+            query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['datasource_name', 'campaign_name','clicks']
+            result.rows.size() == 3
+            result.rows[0] == ['Google Ads', 'Google campaign', 20]
+            result.rows[1] == ['Twitter Ads', 'Other Twitter campaign', 5]
+            result.rows[2] == ['Twitter Ads', 'Twitter campaign', 10]
     }
+
+    void "should calculate clicks without dimensions"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS]
+        def result = statsQueryService.query(query)
+        then:
+            result.headers == ['clicks']
+            result.rows.size() == 1
+            result.rows[0] == 20
+    }
+
+    void "should calculate clicks with datasource dimensions"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 220, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someTwitterCampaign, clicks: 300, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS]
+            query.dimensions = [Dimension.DATASOURCE]
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['datasource_name', 'clicks']
+            result.rows.size() == 2
+            result.rows[0] == ['Google Ads', 230]
+            result.rows[1] == ['Twitter Ads', 300]
+    }
+
+    void "should calculate clicks with campaign dimensions"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS]
+            query.dimensions = [Dimension.CAMPAIGN]
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['campaign_name','clicks']
+            result.rows.size() == 3
+            result.rows[0] == ['Google campaign', 20]
+            result.rows[1] == ['Other Twitter campaign', 5]
+            result.rows[2] == ['Twitter campaign', 10]
+    }
+
+    void "should calculate clicks with datasource and campaign dimensions"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS]
+            query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
+        def result = statsQueryService.query(query)
+        then:
+            result.headers == ['datasource_name', 'campaign_name','clicks']
+            result.rows.size() == 3
+            result.rows[0] == ['Google Ads', 'Google campaign', 20]
+            result.rows[1] == ['Twitter Ads', 'Other Twitter campaign', 5]
+            result.rows[2] == ['Twitter Ads', 'Twitter campaign', 10]
+    }
+
+
+
+//    void "should aggregate all metrics by one dimensions"() {
+//        when:
+//        QueryCommand query = new QueryCommand()
+//        query.metrics = [Metric.CLICKS]
+//        def result = statsQueryService.query(query)
+//        then:
+//        result.rows.size() == 2
+//    }
+//
+//    void "should aggregate all metrics by two dimensions"() {
+//        when:
+//        QueryCommand query = new QueryCommand()
+//        query.metrics = [Metric.CLICKS]
+//        def result = statsQueryService.query(query)
+//        then:
+//        result.rows.size() == 2
+//    }
+//
+//    void "should filter with dates"() {
+//        when:
+//        QueryCommand query = new QueryCommand()
+//        query.metrics = [Metric.CLICKS]
+//        def result = statsQueryService.query(query)
+//        then:
+//        result.rows.size() == 2
+//    }
+//
+//    void "should filter with filters"() {
+//        when:
+//        QueryCommand query = new QueryCommand()
+//        query.metrics = [Metric.CLICKS]
+//        def result = statsQueryService.query(query)
+//        then:
+//        result.rows.size() == 2
+//    }
+//
+//    void "should combine filters"() {
+//        when:
+//        QueryCommand query = new QueryCommand()
+//        query.metrics = [Metric.CLICKS]
+//        def result = statsQueryService.query(query)
+//        then:
+//        result.rows.size() == 2
+//    }
+//
+//
+//    void "should not calculate withoun any metric filters"() {
+//        when:
+//        QueryCommand query = new QueryCommand()
+//        query.metrics = [Metric.CLICKS]
+//        def result = statsQueryService.query(query)
+//        then:
+//        result.rows.size() == 2
+//    }
 }
