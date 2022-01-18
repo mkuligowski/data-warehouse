@@ -71,6 +71,7 @@ dependencies {
     implementation "org.grails.plugins:gsp"
     implementation 'org.grails.plugins:database-migration:4.0.0'
     implementation 'org.liquibase:liquibase-core:4.6.2'
+    implementation 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.2'
 
 
     profile "org.grails.profiles:web"
@@ -89,7 +90,6 @@ dependencies {
     testImplementation "org.seleniumhq.selenium:selenium-support:4.0.0"
     testRuntimeOnly "org.seleniumhq.selenium:selenium-chrome-driver:4.0.0"
     testRuntimeOnly "org.seleniumhq.selenium:selenium-firefox-driver:4.0.0"
-
 }
 
 bootRun {

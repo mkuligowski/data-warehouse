@@ -9,11 +9,11 @@ import grails.orm.HibernateCriteriaBuilder
 
 class StatsQueryService {
 
-//    private static def METRICS_MAPPING = [
-//            Metric.CLICKS: [mappedColumn: 'clicks', aggregationExpression: 'sum(clicks) as clicks'],
-//            Metric.IMPRESSIONS: [mappedColumn: 'impressions', aggregationExpression: 'sum(impressions) as impressions'],
-//            Metric.CTR: [mappedColumn: 'ctr', aggregationExpression: 'sum(clicks) * 1.0 / sum(impressions) as ctr'],
-//    ]
+    private static def METRICS_MAPPING = [
+            (Metric.CLICKS): [mappedColumn: 'clicks', aggregationExpression: 'sum(clicks) as clicks'],
+            (Metric.IMPRESSIONS): [mappedColumn: 'impressions', aggregationExpression: 'sum(impressions) as impressions'],
+            (Metric.CTR): [mappedColumn: 'ctr', aggregationExpression: 'sum(clicks) * 1.0 / sum(impressions) as ctr'],
+    ]
 //
 //    private static def DIMENSIONS_MAPPING = [
 //            Metric.CLICKS,
@@ -28,8 +28,8 @@ class StatsQueryService {
 
 
         List<String> dimensions = queryParams.dimensions.collect{it.mappedColumn}
-        List<String> metricsAggregates = queryParams.metrics.collect{it.expression}
-        List<String> metricNames = queryParams.metrics.collect{it.mappedColumn}
+        List<String> metricsAggregates = queryParams.metrics.collect{METRICS_MAPPING[it].aggregationExpression}
+        List<String> metricNames = queryParams.metrics.collect{METRICS_MAPPING[it].mappedColumn}
 
         List<SQLRestriction> restrictions = queryParams.filters.collect {
             new SQLRestriction(field: it.filter.mappedColumn, value: it.value, operator: '=')
@@ -40,7 +40,6 @@ class StatsQueryService {
         if (queryParams.dateTo)
             restrictions << new SQLRestriction(field: 'stats_date', value: queryParams.dateTo, operator: '<=')
 
-// TODO - round
         String restriction = restrictions.collect {"${it.field}${it.operator}?"}.join(' AND ')
 
         def c = StatsView.createCriteria()
