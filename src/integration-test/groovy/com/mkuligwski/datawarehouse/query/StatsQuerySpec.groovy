@@ -152,6 +152,74 @@ class StatsQuerySpec extends Specification {
             result.rows[2] == ['Twitter Ads', 'Twitter campaign', 10]
     }
 
+    void "should calculate impressions without dimensions"() {
+        given:
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = [Metric.IMPRESSIONS]
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['impressions']
+        result.rows.size() == 1
+        result.rows[0] == 40
+    }
+
+    void "should calculate impressions with datasource dimensions"() {
+        given:
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 500, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 220, impressions: 2000, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someTwitterCampaign, clicks: 300, impressions: 2000, statsDate: LocalDate.now()).save(flush: true)
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = [Metric.IMPRESSIONS]
+        query.dimensions = [Dimension.DATASOURCE]
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['datasource_name', 'impressions']
+        result.rows.size() == 2
+        result.rows[0] == ['Google Ads', 2500]
+        result.rows[1] == ['Twitter Ads', 2000]
+    }
+
+    void "should calculate impressions with campaign dimensions"() {
+        given:
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = [Metric.IMPRESSIONS]
+        query.dimensions = [Dimension.CAMPAIGN]
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['campaign_name','impressions']
+        result.rows.size() == 3
+        result.rows[0] == ['Google campaign', 40]
+        result.rows[1] == ['Other Twitter campaign', 15]
+        result.rows[2] == ['Twitter campaign', 20]
+    }
+
+    void "should calculate impressions with datasource and campaign dimensions"() {
+        given:
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+        new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
+        when:
+        QueryCommand query = new QueryCommand()
+        query.metrics = [Metric.IMPRESSIONS]
+        query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
+        def result = statsQueryService.query(query)
+        then:
+        result.headers == ['datasource_name', 'campaign_name','impressions']
+        result.rows.size() == 3
+        result.rows[0] == ['Google Ads', 'Google campaign', 40]
+        result.rows[1] == ['Twitter Ads', 'Other Twitter campaign', 15]
+        result.rows[2] == ['Twitter Ads', 'Twitter campaign', 20]
+    }
 
 
 //    void "should aggregate all metrics by one dimensions"() {
