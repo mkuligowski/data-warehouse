@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import spock.lang.Specification
 
 import java.time.LocalDate
+import java.time.Month
 
 @Integration
 @Rollback
@@ -243,32 +244,85 @@ class StatsQuerySpec extends Specification {
     }
 
 
-//    void "should aggregate all metrics by one dimensions"() {
-//        when:
-//        QueryCommand query = new QueryCommand()
-//        query.metrics = [Metric.CLICKS]
-//        def result = statsQueryService.query(query)
-//        then:
-//        result.rows.size() == 2
-//    }
-//
-//    void "should aggregate all metrics by two dimensions"() {
-//        when:
-//        QueryCommand query = new QueryCommand()
-//        query.metrics = [Metric.CLICKS]
-//        def result = statsQueryService.query(query)
-//        then:
-//        result.rows.size() == 2
-//    }
-//
-//    void "should filter with dates"() {
-//        when:
-//        QueryCommand query = new QueryCommand()
-//        query.metrics = [Metric.CLICKS]
-//        def result = statsQueryService.query(query)
-//        then:
-//        result.rows.size() == 2
-//    }
+    void "should aggregate many metrics by one dimensions"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 60, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
+            new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 50, statsDate: LocalDate.now()).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
+            query.dimensions = [Dimension.CAMPAIGN]
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['campaign_name','clicks','impressions']
+            result.rows.size() == 3
+            result.rows[0] == ['Google campaign', 20, 80]
+            result.rows[1] == ['Other Twitter campaign', 5, 50]
+            result.rows[2] == ['Twitter campaign', 10, 20]
+    }
+
+    void "should filter with dateFrom"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 1)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 2)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 3)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 4)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 5)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 6)).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
+            query.dimensions = [Dimension.CAMPAIGN]
+            query.dateFrom = LocalDate.of(2022, Month.JANUARY, 2)
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['campaign_name','clicks','impressions']
+            result.rows.size() == 1
+            result.rows[0] == ['Google campaign', 50, 100]
+    }
+
+    void "should filter with dateTo"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 1)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 2)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 3)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 4)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 5)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 6)).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
+            query.dimensions = [Dimension.CAMPAIGN]
+            query.dateTo = LocalDate.of(2022, Month.JANUARY, 2)
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['campaign_name','clicks','impressions']
+            result.rows.size() == 1
+            result.rows[0] == ['Google campaign', 20, 40]
+    }
+
+    void "should filter with dateFrom and dateTo"() {
+        given:
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 1)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 2)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 3)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 4)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 5)).save(flush: true)
+            new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 6)).save(flush: true)
+        when:
+            QueryCommand query = new QueryCommand()
+            query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
+            query.dimensions = [Dimension.CAMPAIGN]
+            query.dateFrom = LocalDate.of(2022, Month.JANUARY, 2)
+            query.dateTo = LocalDate.of(2022, Month.JANUARY, 3)
+            def result = statsQueryService.query(query)
+        then:
+            result.headers == ['campaign_name','clicks','impressions']
+            result.rows.size() == 1
+            result.rows[0] == ['Google campaign', 20, 40]
+    }
 //
 //    void "should filter with filters"() {
 //        when:
