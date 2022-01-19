@@ -1,4 +1,4 @@
-package data.warehouse
+package data.warehouse.query
 
 import java.time.LocalDate
 
@@ -9,9 +9,6 @@ class StatsView {
     LocalDate statsDate
     Integer clicks
     Integer impressions
-
-    static constraints = {
-    }
 
     static mapping = {
         table 'stats_v'

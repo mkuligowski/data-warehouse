@@ -1,13 +1,13 @@
 package com.mkuligwski.datawarehouse.query
 
-import com.mkuligowski.datawarehouse.query.StatsQueryService
+import data.warehouse.StatsQueryService
 import data.warehouse.Campaign
 import data.warehouse.CampaignStatistic
 import data.warehouse.Datasource
 import data.warehouse.Dimension
 import data.warehouse.Filter
 import data.warehouse.Metric
-import data.warehouse.QueryCommand
+import data.warehouse.query.StatsQueryParams
 import grails.gorm.transactions.Rollback
 import grails.testing.mixin.integration.Integration
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,7 +40,7 @@ class StatsQuerySpec extends Specification {
         new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = [Metric.CLICKS]
         def result = statsQueryService.query(query)
         then:
@@ -55,7 +55,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS]
             query.dimensions = [Dimension.DATASOURCE]
             def result = statsQueryService.query(query)
@@ -73,7 +73,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS]
             query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
             def result = statsQueryService.query(query)
@@ -90,7 +90,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS]
         def result = statsQueryService.query(query)
         then:
@@ -105,7 +105,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 220, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someTwitterCampaign, clicks: 300, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS]
             query.dimensions = [Dimension.DATASOURCE]
             def result = statsQueryService.query(query)
@@ -123,7 +123,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS]
             query.dimensions = [Dimension.CAMPAIGN]
             def result = statsQueryService.query(query)
@@ -142,7 +142,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS]
             query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
         def result = statsQueryService.query(query)
@@ -159,7 +159,7 @@ class StatsQuerySpec extends Specification {
         new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = [Metric.IMPRESSIONS]
         def result = statsQueryService.query(query)
         then:
@@ -174,7 +174,7 @@ class StatsQuerySpec extends Specification {
         new CampaignStatistic(campaign: someGoogleCampaign, clicks: 220, impressions: 2000, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someTwitterCampaign, clicks: 300, impressions: 2000, statsDate: LocalDate.now()).save(flush: true)
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = [Metric.IMPRESSIONS]
         query.dimensions = [Dimension.DATASOURCE]
         def result = statsQueryService.query(query)
@@ -192,7 +192,7 @@ class StatsQuerySpec extends Specification {
         new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = [Metric.IMPRESSIONS]
         query.dimensions = [Dimension.CAMPAIGN]
         def result = statsQueryService.query(query)
@@ -211,7 +211,7 @@ class StatsQuerySpec extends Specification {
         new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 15, statsDate: LocalDate.now()).save(flush: true)
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = [Metric.IMPRESSIONS]
         query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
         def result = statsQueryService.query(query)
@@ -232,7 +232,7 @@ class StatsQuerySpec extends Specification {
         new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
         new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 50, statsDate: LocalDate.now()).save(flush: true)
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = [Metric.CTR]
         query.dimensions = [Dimension.DATASOURCE, Dimension.CAMPAIGN]
         def result = statsQueryService.query(query)
@@ -252,7 +252,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 50, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
             query.dimensions = [Dimension.CAMPAIGN]
             def result = statsQueryService.query(query)
@@ -273,7 +273,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 5)).save(flush: true)
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 6)).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
             query.dimensions = [Dimension.CAMPAIGN]
             query.dateFrom = LocalDate.of(2022, Month.JANUARY, 2)
@@ -293,7 +293,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 5)).save(flush: true)
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 6)).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
             query.dimensions = [Dimension.CAMPAIGN]
             query.dateTo = LocalDate.of(2022, Month.JANUARY, 2)
@@ -313,7 +313,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 5)).save(flush: true)
             new CampaignStatistic(campaign: someGoogleCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.of(2022, Month.JANUARY, 6)).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
             query.dimensions = [Dimension.CAMPAIGN]
             query.dateFrom = LocalDate.of(2022, Month.JANUARY, 2)
@@ -332,7 +332,7 @@ class StatsQuerySpec extends Specification {
             new CampaignStatistic(campaign: someTwitterCampaign, clicks: 10, impressions: 20, statsDate: LocalDate.now()).save(flush: true)
             new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 5, impressions: 50, statsDate: LocalDate.now()).save(flush: true)
         when:
-            QueryCommand query = new QueryCommand()
+            StatsQueryParams query = new StatsQueryParams()
             query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
             query.dimensions = [Dimension.CAMPAIGN]
             query.filters = [new Filter(filter: Dimension.CAMPAIGN, value: 'Other Twitter campaign')]
@@ -352,7 +352,7 @@ class StatsQuerySpec extends Specification {
         new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 7, impressions: 57, statsDate: LocalDate.of(2022, Month.JANUARY, 2)).save(flush: true)
         new CampaignStatistic(campaign: someOtherTwitterCampaign, clicks: 3, impressions: 13, statsDate: LocalDate.of(2022, Month.JANUARY, 3)).save(flush: true)
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = [Metric.CLICKS, Metric.IMPRESSIONS]
         query.dimensions = [Dimension.CAMPAIGN]
         query.filters = [new Filter(filter: Dimension.CAMPAIGN, value: 'Other Twitter campaign')]
@@ -366,7 +366,7 @@ class StatsQuerySpec extends Specification {
 
     void "should not calculate without any metric"() {
         when:
-        QueryCommand query = new QueryCommand()
+        StatsQueryParams query = new StatsQueryParams()
         query.metrics = []
         query.dimensions = [Dimension.CAMPAIGN]
         query.dateFrom = LocalDate.of(2022, Month.APRIL, 30)

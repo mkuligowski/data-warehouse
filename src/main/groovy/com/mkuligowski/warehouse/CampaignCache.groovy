@@ -1,4 +1,4 @@
-package com.mkuligowski.dw
+package com.mkuligowski.warehouse
 
 import data.warehouse.Campaign
 

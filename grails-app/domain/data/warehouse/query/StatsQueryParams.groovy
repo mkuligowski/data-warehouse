@@ -1,14 +1,15 @@
-package data.warehouse
+package data.warehouse.query
 
+import data.warehouse.Dimension
+import data.warehouse.Filter
+import data.warehouse.Metric
 import grails.validation.Validateable
 
 import java.time.LocalDate
 
-class QueryCommand implements Validateable {
+class StatsQueryParams implements Validateable {
     List<Metric> metrics
-    // TODO: may be nullable
     List<Dimension> dimensions
-    // TODO: fix filters validation
     List<Filter> filters
     LocalDate dateFrom
     LocalDate dateTo

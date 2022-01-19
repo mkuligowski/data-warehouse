@@ -6,5 +6,7 @@ class Campaign {
     Datasource datasource
 
     static constraints = {
+        name nullable: false
+        datasource nullable: false
     }
 }

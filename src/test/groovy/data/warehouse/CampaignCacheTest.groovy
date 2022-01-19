@@ -1,5 +1,6 @@
-package com.mkuligowski.dw
+package data.warehouse
 
+import com.mkuligowski.warehouse.CampaignCache
 import data.warehouse.Campaign
 import data.warehouse.Datasource
 import spock.lang.Specification
@@ -30,7 +31,7 @@ class CampaignCacheTest extends Specification {
 
         then:
         campaignCache.get('FB Ads', 'some campaign') == null
-        campaignCache.get('Google Ads', 'some campaign') == null
+        campaignCache.get('Google Ads', 'some campaign') != null
     }
 
 }

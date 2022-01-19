@@ -1,10 +1,7 @@
-package com.mkuligowski.datawarehouse.query
+package data.warehouse
 
-import data.warehouse.Dimension
-import data.warehouse.Metric
-import data.warehouse.QueryCommand
-import data.warehouse.SQLRestriction
-import data.warehouse.StatsView
+import data.warehouse.query.StatsQueryParams
+import data.warehouse.query.StatsView
 import grails.gorm.transactions.Transactional
 import grails.orm.HibernateCriteriaBuilder
 import org.hibernate.type.Type
@@ -23,7 +20,7 @@ class StatsQueryService {
     ]
 
     @Transactional(readOnly = true)
-    def query(QueryCommand queryParams) {
+    def query(StatsQueryParams queryParams) {
 
         if (!queryParams.metrics)
             return  ([headers: [], rows: []])
@@ -66,15 +63,15 @@ class StatsQueryService {
         return "${dimensions.join(',')} ${dimensions ? ',' : ''} ${metricsAggregates.join(',')}"
     }
 
-    private static List prepareRestrictionsStatement(QueryCommand queryParams) {
-        List<SQLRestriction> restrictions = queryParams.filters.collect {
-            new SQLRestriction(field: DIMENSIONS_MAPPING[it.filter].mappedColumn, value: it.value, operator: '=')
+    private static List prepareRestrictionsStatement(StatsQueryParams queryParams) {
+        def restrictions = queryParams.filters.collect {
+            [field: DIMENSIONS_MAPPING[it.filter].mappedColumn, value: it.value, operator: '=']
         }
         if (queryParams.dateFrom)
-            restrictions << new SQLRestriction(field: 'stats_date', value: queryParams.dateFrom, operator: '>=')
+            restrictions << [field: 'stats_date', value: queryParams.dateFrom, operator: '>=']
 
         if (queryParams.dateTo)
-            restrictions << new SQLRestriction(field: 'stats_date', value: queryParams.dateTo, operator: '<=')
+            restrictions << [field: 'stats_date', value: queryParams.dateTo, operator: '<=']
 
         String restrictionSqlStatement = restrictions.collect { "${it.field}${it.operator}?" }.join(' AND ')
         return [restrictionSqlStatement, restrictions.collect{it.value}]

@@ -1,6 +1,6 @@
 package data.warehouse
 
-import com.mkuligowski.datawarehouse.query.StatsQueryService
+import data.warehouse.query.StatsQueryParams
 
 class StatsController {
 
@@ -8,9 +8,8 @@ class StatsController {
 
     StatsQueryService statsQueryService
 
-    def query(QueryCommand command) {
+    def query(StatsQueryParams command) {
 
-        // TODO: indices!
         if (!command.validate()) {
             response.status = 400
             respond([errors: command.errors.allErrors])

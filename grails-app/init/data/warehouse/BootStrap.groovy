@@ -1,17 +1,23 @@
 package data.warehouse
 
-import com.mkuligowski.dw.DataLoader
 import grails.util.Environment
 import org.grails.io.support.ClassPathResource
 
 class BootStrap {
 
-    DataLoader dataLoader
+    StatsLoadingService statsLoadingService
 
     def init = { servletContext ->
-        // TODO: transactional - all or nothing
-        if (Environment.current in [Environment.DEVELOPMENT, Environment.PRODUCTION])
-            dataLoader.loadFile(new ClassPathResource('./data.csv').getFile().newInputStream())
+
+        def env = Environment.current
+        def x = Environment.currentEnvironment
+
+        if (Environment.current in [Environment.DEVELOPMENT, Environment.PRODUCTION]){
+            CampaignStatistic.deleteAll()
+            Campaign.deleteAll()
+            Datasource.deleteAll()
+            statsLoadingService.loadFromStream(new ClassPathResource('./data.csv').getFile().newInputStream())
+        }
     }
     def destroy = {
     }

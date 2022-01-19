@@ -95,9 +95,15 @@ databaseChangeLog = {
         createIndex(tableName: "campaign_statistic", name: 'stats_date_idx'){
             column(name: 'stats_date')
         }
+
+        createIndex(tableName: "campaign_statistic", name: 'stats_date_idx'){
+            column(name: 'stats_date')
+        }
         createIndex(tableName: "campaign", name: 'datasource_idx'){
             column(name: 'datasource_id')
         }
+
+        addUniqueConstraint(tableName: 'campaign_statistic', constraintName: 'campaign_statistic_unique_constraint', columnNames:'stats_date, campaign_id')
     }
 
 }

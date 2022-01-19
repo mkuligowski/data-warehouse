@@ -3,13 +3,8 @@ package data.warehouse
 class UrlMappings {
 
     static mappings = {
-        "/$controller/$action?/$id?(.$format)?"{
-            constraints {
-                // apply constraints here
-            }
-        }
+        post "/campaign-statistics"(controller: 'stats', action: 'query')
 
-        "/"(view:"/index")
         "500"(view:'/error')
         "404"(view:'/notFound')
     }
